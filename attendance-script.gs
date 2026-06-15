@@ -1,72 +1,96 @@
 // ============================================================
 //  Attendance Scanner — Google Apps Script
-//  Paste this entire file into your Apps Script editor
-//  in the spreadsheet: https://docs.google.com/spreadsheets/d/113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo
+//  Columns: Timestamp | Name | Email | Location | Handphone Number
+//  Sheet: https://docs.google.com/spreadsheets/d/113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo
+//  DEPLOY: Execute as Me, Who has access: Anyone
 // ============================================================
 
-// Your specific Google Sheet ID (already set)
 var SPREADSHEET_ID = "113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo";
+var SHEET_GID      = 246908960;
+var SHEET_NAME     = "Form_Responses";
 
-// Name of the sheet tab to write attendance into
-var SHEET_NAME = "Attendance";
-
-// ============================================================
-//  DO NOT EDIT BELOW THIS LINE
-// ============================================================
-
-function doPost(e) {
+function doGet(e) {
+  var output;
   try {
-    var sheet = getOrCreateSheet();
-    var data = JSON.parse(e.postData.contents);
+    var p = e.parameter || {};
 
-    // Add header row if sheet is empty
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["Name", "Phone", "Session", "Location", "Date", "Time", "Logged At"]);
-      var headerRange = sheet.getRange(1, 1, 1, 7);
-      headerRange.setFontWeight("bold");
-      headerRange.setBackground("#1a1916");
-      headerRange.setFontColor("#ffffff");
-      sheet.setFrozenRows(1);
+    // Test ping
+    if (!p.name) {
+      output = { status: "ok", message: "Script is running!" };
+      return respond(output, p.callback);
     }
 
-    // Append the attendance record
-    sheet.appendRow([
-      data.name     || "",
-      data.phone    || "",
-      data.session  || "",
-      data.location || "",
-      data.date     || "",
-      data.time     || "",
-      new Date().toLocaleString("en-SG")
-    ]);
+    var sheet = getTargetSheet();
 
-    // Auto-resize columns
-    sheet.autoResizeColumns(1, 7);
+    // Ensure spreadsheet timezone is Singapore so timestamps align
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (ss.getSpreadsheetTimeZone() !== "Asia/Singapore") {
+      ss.setSpreadsheetTimeZone("Asia/Singapore");
+    }
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: "ok", message: "Logged: " + data.name }))
-      .setMimeType(ContentService.MimeType.JSON);
+    // Create header if sheet is empty
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["Timestamp", "Name", "Email", "Location", "Handphone Number"]);
+      sheet.getRange(1, 1, 1, 5)
+        .setFontWeight("bold")
+        .setBackground("#4a1a8c")
+        .setFontColor("#ffffff");
+      sheet.setFrozenRows(1);
+      sheet.autoResizeColumns(1, 5);
+    }
 
-  } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    // Clean phone — strip +65 prefix, keep 8 digits only
+    var rawPhone = (p.phone || "").toString().replace(/\D/g, "");
+    if (rawPhone.startsWith("65") && rawPhone.length === 10) {
+      rawPhone = rawPhone.substring(2); // strip country code
+    }
+
+    // Use a real Date object (Singapore timezone) so it matches the
+    // existing Form_Responses timestamp column type and format
+    var now = new Date();
+
+    // Write to explicit cell range (A:E) — guarantees correct column
+    // alignment regardless of any extra/empty trailing columns
+    var nextRow = sheet.getLastRow() + 1;
+    sheet.getRange(nextRow, 1, 1, 5).setValues([[
+      now,                  // A: Timestamp (real date value)
+      p.name     || "",     // B: Name
+      p.email    || "",     // C: Email
+      p.location || "",     // D: Location
+      rawPhone              // E: Handphone Number (8 digits only)
+    ]]);
+
+    // Format the timestamp cell to match existing rows: DD/MM/YYYY HH:MM:SS
+    sheet.getRange(nextRow, 1).setNumberFormat("dd/MM/yyyy HH:mm:ss");
+
+    sheet.autoResizeColumns(1, 5);
+    output = { status: "ok", message: "Logged: " + p.name };
+
+  } catch(err) {
+    output = { status: "error", message: err.toString() };
   }
+
+  return respond(output, (e.parameter||{}).callback);
 }
 
-// Handles GET requests — open this URL in browser to test
-function doGet(e) {
+function respond(data, callback) {
+  var json = JSON.stringify(data);
+  var content = callback ? callback + "(" + json + ")" : json;
   return ContentService
-    .createTextOutput(JSON.stringify({ status: "ok", message: "Attendance Script is running! Sheet ID: " + SPREADSHEET_ID }))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(content)
+    .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
 }
 
-// Gets or creates the Attendance sheet tab in YOUR specific spreadsheet
-function getOrCreateSheet() {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
+function getTargetSheet() {
+  var ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheets = ss.getSheets();
+  // Try GID first
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getSheetId() === SHEET_GID) return sheets[i];
   }
-  return sheet;
+  // Try name
+  var byName = ss.getSheetByName(SHEET_NAME);
+  if (byName) return byName;
+  // Create new
+  return ss.insertSheet(SHEET_NAME);
 }
