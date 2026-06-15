@@ -1,107 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Attendance Scanner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f5f4f0; --surface: #ffffff; --surface2: #f0efe9;
-    --border: #e2e0d8; --text: #1a1916; --text2: #6b6860; --text3: #a8a69e;
-    --green: #1a7a4a; --green-bg: #e8f5ee; --red: #c0392b;
-    --accent: #2563eb; --accent-bg: #eff4ff;
-    --amber: #92400e; --amber-bg: #fffbeb;
-    --radius: 12px; --radius-sm: 8px;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--text:#1a1916;--text2:#6b6860;--text3:#a8a69e;
+  --green:#1a7a4a;--green-bg:#e8f5ee;--green-border:#a7d7bb;
+  --red:#c0392b;--red-bg:#fdecea;
+  --accent:#2563eb;--accent-bg:#eff4ff;
+  --radius:14px;--radius-sm:9px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
-  .logo { width: 36px; height: 36px; background: var(--text); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
-  .logo svg { width: 20px; height: 20px; }
-  header h1 { font-size: 16px; font-weight: 600; }
-  .sync-pill { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; transition: background 0.3s; }
-  .sync-dot.connected { background: #16a34a; }
-  .sync-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
-  .sync-dot.error { background: var(--red); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:10px;height:54px;position:sticky;top:0;z-index:10}
+.logo{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:17px;height:17px}
+header h1{font-size:16px;font-weight:600;margin-right:auto}
+.sync-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:#d1d5db;flex-shrink:0}
+.dot.on{background:#16a34a}
+.dot.busy{background:#f59e0b;animation:blink 1s infinite}
+.dot.err{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-  main { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+main{max-width:440px;margin:0 auto;padding:20px 16px 60px;display:flex;flex-direction:column;gap:16px}
 
-  /* Setup banner */
-  #setup-card { background: var(--amber-bg); border: 1px solid #fcd34d; border-radius: var(--radius); padding: 16px; }
-  #setup-card h3 { font-size: 14px; font-weight: 600; color: var(--amber); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-  #setup-card p { font-size: 13px; color: var(--amber); margin-bottom: 10px; line-height: 1.5; }
-  .url-row { display: flex; gap: 8px; }
-  .url-row input { flex: 1; padding: 8px 10px; font-size: 12px; font-family: 'DM Mono', monospace; border: 1px solid #fcd34d; border-radius: var(--radius-sm); background: #fff; color: var(--text); outline: none; min-width: 0; }
-  .url-row input:focus { border-color: var(--accent); }
-  .url-row button { padding: 8px 14px; font-size: 13px; font-weight: 500; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
-  #setup-card.connected { background: var(--green-bg); border-color: #a7d7bb; }
-  #setup-card.connected h3 { color: var(--green); }
-  #setup-card.connected p { color: var(--green); }
+/* Step indicator */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:4px}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.step.active{color:var(--accent);font-weight:600}
+.step.done{color:var(--green)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.step.active .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.done .step-num{background:var(--green);border-color:var(--green);color:#fff}
+.step-line{flex:1;height:1.5px;background:var(--border);margin:0 6px}
+.step-line.done{background:var(--green)}
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .card-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .card-header h2 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .card-body { padding: 16px; }
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-head{padding:14px 16px;border-bottom:1px solid var(--border)}
+.card-head h2{font-size:14px;font-weight:600}
+.card-head p{font-size:12px;color:var(--text2);margin-top:2px}
+.card-body{padding:16px}
 
-  /* Scanner */
-  #scanner-wrap { background: #111; border-radius: var(--radius-sm); overflow: hidden; position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; }
-  #preview { width: 100%; display: none; }
-  #qr-canvas { display: none; }
-  .scan-placeholder { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 2rem; text-align: center; }
-  .scan-placeholder svg { width: 48px; height: 48px; color: #444; }
-  .scan-placeholder p { font-size: 13px; color: #555; }
-  .scan-overlay { position: absolute; top:0;left:0;right:0;bottom:0; pointer-events:none; display:none; }
-  .corner { position:absolute; width:28px; height:28px; border-color:#fff; border-style:solid; opacity:0.8; }
-  .corner.tl { top:24px;left:50%;transform:translateX(-65px);border-width:3px 0 0 3px;border-radius:4px 0 0 0; }
-  .corner.tr { top:24px;left:50%;transform:translateX(37px);border-width:3px 3px 0 0;border-radius:0 4px 0 0; }
-  .corner.bl { bottom:24px;left:50%;transform:translateX(-65px);border-width:0 0 3px 3px;border-radius:0 0 0 4px; }
-  .corner.br { bottom:24px;left:50%;transform:translateX(37px);border-width:0 3px 3px 0;border-radius:0 0 4px 0; }
-  .scan-line { position:absolute;left:50%;transform:translateX(-50%);width:130px;height:2px;background:rgba(255,255,255,0.6);animation:scanMove 2s ease-in-out infinite; }
-  @keyframes scanMove { 0%,100%{top:30px;opacity:0.6} 50%{top:calc(100% - 50px);opacity:1} }
-  #detect-banner { display:none; background:var(--green-bg); border:1px solid #a7d7bb; border-radius:var(--radius-sm); padding:10px 14px; margin-top:12px; font-size:13px; color:var(--green); align-items:center; gap:8px; }
+/* Fields */
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em}
+.field input,.field select{width:100%;padding:12px 13px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text);background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);outline:none;transition:border-color 0.15s,background 0.15s}
+.field input:focus,.field select:focus{border-color:var(--accent);background:#fff}
+.field input.filled{background:#fff;border-color:var(--green-border)}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6860' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.phone-wrap{position:relative}
+.phone-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text2);pointer-events:none;font-family:'DM Mono',monospace}
+.phone-wrap input{padding-left:48px}
 
-  /* Buttons */
-  .btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s; }
-  .btn:active { transform:scale(0.98); }
-  .btn-dark { background:var(--text);color:#fff;margin-top:12px; }
-  .btn-dark:hover { opacity:0.85; }
-  .btn-green { background:var(--green);color:#fff;margin-top:4px; }
-  .btn-green:hover { opacity:0.88; }
-  .btn-sm { width:auto;padding:6px 12px;font-size:12px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:var(--radius-sm);cursor:pointer; }
-  .btn-sm:hover { background:var(--surface2); }
+/* Known member banner */
+#known-banner{display:none;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:13px;display:none;align-items:center;gap:10px}
+#known-banner svg{flex-shrink:0;color:var(--green)}
+#known-banner p{font-size:13px;color:var(--green);line-height:1.4}
+#known-banner strong{font-weight:600}
 
-  /* Fields */
-  .field { margin-bottom: 12px; }
-  .field label { display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em; }
-  .field input, .field select { width:100%;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);outline:none;transition:border-color 0.15s; }
-  .field input:focus, .field select:focus { border-color:var(--accent);background:#fff; }
-  .field select { appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6860' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer; }
-  .fields-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-green{background:var(--green);color:#fff;margin-top:4px}
+.btn-green:hover:not(:disabled){opacity:0.88}
+.btn-outline{background:transparent;color:var(--text2);border:1.5px solid var(--border);margin-top:4px}
+.btn-outline:hover{background:var(--surface2)}
 
-  #status { font-size:13px;text-align:center;padding:8px 0 0;min-height:24px; }
+/* Success screen */
+#success-screen{display:none;flex-direction:column;align-items:center;text-align:center;padding:32px 16px}
+.success-icon{width:70px;height:70px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.success-icon svg{color:var(--green)}
+#success-screen h2{font-size:22px;font-weight:600;margin-bottom:6px}
+#success-screen p{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.success-detail{background:var(--surface2);border-radius:var(--radius-sm);padding:13px 16px;width:100%;text-align:left;margin-bottom:20px}
+.success-detail .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)}
+.success-detail .row:last-child{border-bottom:none;padding-bottom:0}
+.success-detail .row span:first-child{color:var(--text2)}
+.success-detail .row span:last-child{font-weight:500;text-align:right}
 
-  /* Log list */
-  #att-list { display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto; }
-  .att-row { display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-sm);animation:fadeIn 0.2s ease; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
-  .avatar { width:38px;height:38px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-  .att-info { flex:1;min-width:0; }
-  .att-name { font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .att-sub { font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .att-loc { font-size:11px;color:var(--text3); }
-  .att-right { text-align:right;flex-shrink:0; }
-  .att-time { font-size:11px;color:var(--text3);font-family:'DM Mono',monospace; }
-  .att-sync { font-size:13px; }
-  .empty { text-align:center;color:var(--text3);font-size:13px;padding:24px 0; }
-  .count-pill { background:var(--accent-bg);color:var(--accent);font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px; }
+/* Flash */
+.flash{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;display:none;margin-top:10px;text-align:center;line-height:1.6}
+.flash.ok{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green)}
+.flash.fail{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red)}
 
-  .sheet-link { display:flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none; }
-  .sheet-link:hover { text-decoration:underline; }
+/* Sheet link */
 </style>
 </head>
 <body>
@@ -114,306 +104,346 @@
       <path d="M14 14h2v2h-2zM18 14h3M14 18v3M18 18h3v3h-3z"/>
     </svg>
   </div>
-  <h1>Attendance Scanner</h1>
+  <h1>Attendance</h1>
   <div class="sync-pill">
-    <div class="sync-dot" id="sync-dot"></div>
-    <span id="sync-label">Not connected</span>
+    <div class="dot on" id="sync-dot"></div>
+    <span id="sync-label">Ready</span>
   </div>
 </header>
 
 <main>
 
-  <!-- Step 1: Connect Apps Script URL -->
-  <div id="setup-card">
-    <h3>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Connect to Google Sheets
-    </h3>
-    <p id="setup-msg">Your sheet is ready at the link below. Paste your Apps Script Web App URL to activate auto-sync.</p>
-    <div class="url-row">
-      <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/.../exec" />
-      <button onclick="saveUrl()">Connect</button>
-    </div>
-    <div style="margin-top:10px">
-      <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo/edit" target="_blank">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Open your Google Sheet
-      </a>
-    </div>
-  </div>
-
-  <!-- Scanner -->
-  <div class="card">
-    <div class="card-header">
-      <h2>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-        Scan Member's WhatsApp QR
-      </h2>
-    </div>
-    <div class="card-body">
-      <div id="scanner-wrap">
-        <div class="scan-placeholder" id="placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <p style="color:#555">Camera will appear here<br/>after tapping Start</p>
-        </div>
-        <video id="preview" autoplay muted playsinline></video>
-        <canvas id="qr-canvas"></canvas>
-        <div class="scan-overlay" id="overlay">
-          <div class="corner tl"></div><div class="corner tr"></div>
-          <div class="corner bl"></div><div class="corner br"></div>
-          <div class="scan-line"></div>
-        </div>
+  <!-- ── STEP: PHONE LOOKUP ── -->
+  <div id="step-phone">
+    <div class="card">
+      <div class="card-head">
+        <h2>Welcome! 👋</h2>
+        <p>Enter your handphone number to check in</p>
       </div>
-      <div id="detect-banner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span>WhatsApp QR detected — <strong id="detected-num"></strong></span>
-      </div>
-      <button class="btn btn-dark" id="start-btn" onclick="toggleScanner()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Start Camera
-      </button>
-    </div>
-  </div>
-
-  <!-- Member Details -->
-  <div class="card">
-    <div class="card-header"><h2>Member Details</h2></div>
-    <div class="card-body">
-      <div class="field">
-        <label>Name</label>
-        <input type="text" id="inp-name" placeholder="Type member's name" autocomplete="off" />
-      </div>
-      <div class="fields-row">
+      <div class="card-body">
         <div class="field">
-          <label>Phone</label>
-          <input type="text" id="inp-phone" placeholder="+65 9xxx xxxx" readonly />
+          <label>Handphone Number</label>
+          <div class="phone-wrap">
+            <span class="phone-prefix">+65</span>
+            <input type="tel" id="phone-input" placeholder="9xxx xxxx" maxlength="8"
+              oninput="this.value=this.value.replace(/[^\d]/g,'').slice(0,8); onPhoneInput(this.value)"
+              onkeydown="if(event.key==='Enter') nextFromPhone()"/>
+          </div>
+          <div id="last-phone-msg" style="font-size:12px;color:var(--green);margin-top:6px;display:none"></div>
         </div>
-        <div class="field">
-          <label>Session</label>
-          <input type="text" id="inp-event" placeholder="e.g. Mon Class" value="Attendance" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Location</label>
-        <select id="inp-location">
-          <option value="">— Select location —</option>
-          <option>面包物语练功场</option>
-          <option>碧山Active Park练功场</option>
-          <option>植物园 练功场</option>
-          <option>碧山-宏茂桥公园</option>
-          <option>淡滨尼东民众俱乐部</option>
-          <option>蔡厝港公园</option>
-          <option>107A Aljunied Crescent</option>
-          <option>金文泰体育馆 Clementi Sports Hall</option>
-        </select>
-      </div>
-      <button class="btn btn-green" onclick="logAttendance()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Confirm &amp; Log Attendance
-      </button>
-      <div id="status"></div>
-    </div>
-  </div>
-
-  <!-- Attendance Log -->
-  <div class="card">
-    <div class="card-header">
-      <h2>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        Today's Log
-      </h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span class="count-pill" id="count">0 present</span>
-        <button class="btn-sm" onclick="exportCSV()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export CSV
+        <button class="btn btn-green" onclick="nextFromPhone()" id="phone-btn">
+          Continue →
         </button>
       </div>
     </div>
-    <div class="card-body" style="padding:12px 16px">
-      <div id="att-list"><div class="empty">No attendance yet — scan a QR to begin</div></div>
+  </div>
+
+  <!-- ── STEP: DETAILS ── -->
+  <div id="step-details" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <h2 id="details-title">Your Details</h2>
+        <p id="details-sub">Please confirm your information</p>
+      </div>
+      <div class="card-body">
+
+        <!-- Returning member banner -->
+        <div id="known-banner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <p>Welcome back, <strong id="known-name"></strong>! Your details have been filled in.</p>
+        </div>
+
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="name-input" placeholder="Your full name" autocomplete="name"
+            oninput="if(this.value) this.classList.add('filled'); else this.classList.remove('filled')"/>
+        </div>
+
+        <div class="field">
+          <label>Handphone Number</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="phone-wrap" style="flex:1">
+              <span class="phone-prefix">+65</span>
+              <input type="tel" id="phone-display" class="filled"
+                oninput="this.value=this.value.replace(/[^\d]/g,'').slice(0,8); onPhoneDisplayInput(this.value)"
+                onkeydown="if(event.key==='Enter') document.getElementById('location-input').focus()"/>
+            </div>
+            <button type="button" onclick="clearPhone()"
+              style="flex-shrink:0;padding:10px 13px;font-size:13px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap">
+              ✏️ Change
+            </button>
+          </div>
+          <div id="phone-lookup-msg" style="font-size:12px;color:var(--green);margin-top:5px;display:none"></div>
+        </div>
+
+        <div class="field">
+          <label>Location</label>
+          <select id="location-input">
+            <option value="">— Select your location —</option>
+            <option>面包物语练功场</option>
+            <option>碧山Active Park练功场</option>
+            <option>植物园 练功场</option>
+            <option>碧山-宏茂桥公园</option>
+            <option>淡滨尼东民众俱乐部</option>
+            <option>蔡厝港公园</option>
+            <option>107A Aljunied Crescent</option>
+            <option>金文泰体育馆 Clementi Sports Hall</option>
+          </select>
+        </div>
+
+        <button class="btn btn-green" onclick="submitAttendance()" id="submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit Attendance
+        </button>
+        <button class="btn btn-outline" onclick="goBack()">← Change phone number</button>
+        <div class="flash" id="submit-flash"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SUCCESS SCREEN ── -->
+  <div id="step-success" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <div id="success-screen">
+          <div class="success-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2>Attendance Recorded!</h2>
+          <p id="success-msg">Your attendance has been submitted successfully.</p>
+          <div class="success-detail" id="success-detail"></div>
+          <button class="btn btn-green" onclick="resetForm()" style="width:100%;margin-top:0">
+            ✓ Done — Submit Another
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo/edit";
-const STORAGE_KEY = "att_script_url_v2";
-let camStream=null, scanLoop=null, scanning=false, records=[];
+// ── Config ─────────────────────────────────────────────────────
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbz2Ay8bJFcDyoDKqS5R8B_lWS4R9fN_GwkazJd3-ggRtQURSLRXvQQjD-RHTO-H7GgLjQ/exec';
+const MEMBERS_KEY = 'att_members_v8';
 
-// On load — restore saved script URL
+let members = {};
+let currentPhone = '';
+
+// ── Init ────────────────────────────────────────────────────────
+const LAST_PHONE_KEY = 'att_last_phone_v1';
+
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    document.getElementById('script-url').value = saved;
-    setConnected();
+  try { members = JSON.parse(localStorage.getItem(MEMBERS_KEY) || '{}'); } catch(e) { members = {}; }
+
+  // Restore last used phone number
+  const lastPhone = localStorage.getItem(LAST_PHONE_KEY);
+  if (lastPhone) {
+    const digits = lastPhone.replace(/^\+65/, '');
+    document.getElementById('phone-input').value = digits;
+    onPhoneInput(digits);
+    document.getElementById('last-phone-msg').style.display = 'block';
+    document.getElementById('last-phone-msg').textContent = '📱 Last used: +65 ' + digits + ' — tap Continue or change it';
   }
-  document.getElementById('today-date') && (document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-SG', {weekday:'short', day:'numeric', month:'short'}));
+  document.getElementById('phone-input').focus();
+  document.getElementById('phone-input').select();
 });
 
-function saveUrl() {
-  const url = document.getElementById('script-url').value.trim();
-  if (!url || !url.includes('script.google.com')) {
-    setSyncState('error', 'Invalid URL');
-    return;
-  }
-  localStorage.setItem(STORAGE_KEY, url);
-  setConnected();
-}
-
-function setConnected() {
-  setSyncState('connected', 'Sheets connected');
-  const card = document.getElementById('setup-card');
-  card.className = 'connected';
-  document.getElementById('setup-msg').textContent = '✅ Syncing to your Google Sheet automatically on every check-in.';
-}
-
-function setSyncState(state, label) {
-  document.getElementById('sync-dot').className = 'sync-dot' + (state ? ' ' + state : '');
-  document.getElementById('sync-label').textContent = label;
-}
-
-async function syncToSheets(record) {
-  const url = localStorage.getItem(STORAGE_KEY);
-  if (!url) return false;
-  setSyncState('syncing', 'Syncing...');
-  try {
-    await fetch(url, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-    setSyncState('connected', 'Synced ✓');
-    return true;
-  } catch(err) {
-    setSyncState('error', 'Sync failed');
-    return false;
-  }
-}
-
-function toggleScanner() { scanning ? stopCam() : startCam(); }
-
-function startCam() {
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then(s => {
-      camStream = s; scanning = true;
-      const v = document.getElementById('preview');
-      v.srcObject = s; v.style.display = 'block';
-      document.getElementById('placeholder').style.display = 'none';
-      document.getElementById('overlay').style.display = 'block';
-      document.getElementById('start-btn').innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-        Stop Camera`;
-      scanLoop = setInterval(doScan, 350);
-    })
-    .catch(() => setStatus('Camera access denied. Please allow camera permission.', 'red'));
-}
-
-function stopCam() {
-  scanning = false;
-  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-  if (scanLoop) { clearInterval(scanLoop); scanLoop = null; }
-  const v = document.getElementById('preview');
-  v.style.display = 'none'; v.srcObject = null;
-  document.getElementById('placeholder').style.display = 'flex';
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('start-btn').innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    Start Camera`;
-}
-
-function doScan() {
-  const v = document.getElementById('preview'), c = document.getElementById('qr-canvas');
-  if (v.readyState !== v.HAVE_ENOUGH_DATA) return;
-  c.width = v.videoWidth; c.height = v.videoHeight;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(v, 0, 0, c.width, c.height);
-  const code = jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
-  if (!code) return;
-  const m = code.data.match(/wa\.me\/(\d+)/);
-  if (m) {
-    const phone = '+' + m[1];
-    document.getElementById('inp-phone').value = phone;
-    document.getElementById('detected-num').textContent = phone;
-    document.getElementById('detect-banner').style.display = 'flex';
-    setStatus('✅ Phone captured! Enter name and confirm.', 'green');
-    stopCam();
-    document.getElementById('inp-name').focus();
+// ── Step 1: Phone input ─────────────────────────────────────────
+function onPhoneInput(val) {
+  // Auto-highlight if known member
+  const phone = '+65' + val;
+  const btn = document.getElementById('phone-btn');
+  if (val.length === 8) {
+    btn.textContent = members[phone] ? '✓ Welcome back — Continue →' : 'Continue →';
   } else {
-    setStatus('Not a WhatsApp QR. Ask member to open WhatsApp → Settings → QR icon.', 'red');
+    btn.textContent = 'Continue →';
   }
 }
 
-async function logAttendance() {
-  const name     = document.getElementById('inp-name').value.trim();
-  const phone    = document.getElementById('inp-phone').value.trim();
-  const session  = document.getElementById('inp-event').value.trim() || 'Attendance';
-  const location = document.getElementById('inp-location').value;
-  if (!name)     { setStatus('Please enter the member\'s name.', 'red'); return; }
-  if (!phone)    { setStatus('Scan the WhatsApp QR first.', 'red'); return; }
-  if (!location) { setStatus('Please select a location.', 'red'); return; }
-  const now = new Date();
-  const time = now.toLocaleTimeString('en-SG', { hour:'2-digit', minute:'2-digit' });
+function nextFromPhone() {
+  const raw = document.getElementById('phone-input').value.replace(/[^\d]/g, '');
+  if (raw.length < 8) { shake('phone-input'); return; }
+  currentPhone = '+65' + raw;
+  localStorage.setItem(LAST_PHONE_KEY, currentPhone);
+
+  // Show details step
+  document.getElementById('step-phone').style.display    = 'none';
+  document.getElementById('step-details').style.display  = 'block';
+  document.getElementById('phone-display').value         = raw;
+  document.getElementById('phone-lookup-msg').style.display = 'none';
+
+  const known = members[currentPhone];
+  if (known) {
+    // Returning member — pre-fill name
+    document.getElementById('name-input').value = known.name;
+    document.getElementById('name-input').classList.add('filled');
+    document.getElementById('known-name').textContent = known.name;
+    document.getElementById('known-banner').style.display = 'flex';
+    document.getElementById('details-title').textContent = 'Welcome back! 🎉';
+    document.getElementById('details-sub').textContent   = 'Just select your location and submit.';
+    document.getElementById('location-input').focus();
+  } else {
+    // New member
+    document.getElementById('known-banner').style.display = 'none';
+    document.getElementById('details-title').textContent  = 'First time? Welcome! 👋';
+    document.getElementById('details-sub').textContent    = 'Please enter your name and location.';
+    document.getElementById('name-input').value = '';
+    document.getElementById('name-input').classList.remove('filled');
+    document.getElementById('name-input').focus();
+  }
+  // Always reset location
+  document.getElementById('location-input').selectedIndex = 0;
+}
+
+function clearPhone() {
+  // Allow editing phone number directly — re-lookup member on change
+  const el = document.getElementById('phone-display');
+  el.focus();
+  el.select();
+}
+
+function onPhoneDisplayInput(val) {
+  const phone = '+65' + val;
+  currentPhone = phone;
+  const msg = document.getElementById('phone-lookup-msg');
+  if (val.length === 8) {
+    const known = members[phone];
+    if (known) {
+      // Found — update name field
+      document.getElementById('name-input').value = known.name;
+      document.getElementById('name-input').classList.add('filled');
+      document.getElementById('known-name').textContent = known.name;
+      document.getElementById('known-banner').style.display = 'flex';
+      msg.textContent = '✅ Member found: ' + known.name;
+      msg.style.color = 'var(--green)';
+      msg.style.display = 'block';
+    } else {
+      // New number
+      document.getElementById('known-banner').style.display = 'none';
+      document.getElementById('name-input').value = '';
+      document.getElementById('name-input').classList.remove('filled');
+      msg.textContent = 'New number — please enter your name above.';
+      msg.style.color = 'var(--text3)';
+      msg.style.display = 'block';
+      document.getElementById('name-input').focus();
+    }
+  } else {
+    msg.style.display = 'none';
+  }
+}
+
+function goBack() {
+  document.getElementById('step-details').style.display = 'none';
+  document.getElementById('step-phone').style.display   = 'block';
+  document.getElementById('phone-input').focus();
+  document.getElementById('submit-flash').style.display = 'none';
+}
+
+// ── Step 2: Submit ──────────────────────────────────────────────
+async function submitAttendance() {
+  const name     = document.getElementById('name-input').value.trim();
+  const location = document.getElementById('location-input').value;
+
+  if (!name)     { shake('name-input');     return; }
+  if (!location) { shake('location-input'); return; }
+
+  // Save member for future visits
+  members[currentPhone] = { name, phone: currentPhone };
+  localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Submitting…`;
+
+  const now  = new Date();
+  const time = now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
   const date = now.toLocaleDateString('en-SG');
-  const record = { name, phone, session, location, time, date, synced: false };
-  records.push(record);
-  renderList();
-  document.getElementById('inp-name').value = '';
-  document.getElementById('inp-phone').value = '';
-  document.getElementById('inp-location').selectedIndex = 0;
-  document.getElementById('detect-banner').style.display = 'none';
-  setStatus('Logged ' + name + ' — syncing to Sheets...', 'green');
+  const phoneClean = currentPhone.replace(/^\+65/, '');
+  const record = { name, phone: phoneClean, email: '', location };
+
   const ok = await syncToSheets(record);
-  record.synced = ok;
-  renderList();
-  setStatus(
-    ok ? '✅ ' + name + ' synced to Google Sheets!' : '✅ ' + name + ' saved locally. Check your script URL.',
-    ok ? 'green' : 'red'
-  );
-  setTimeout(() => setStatus('', ''), 4500);
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Submit Attendance`;
+
+  if (ok) {
+    // Show success screen
+    document.getElementById('step-details').style.display = 'none';
+    document.getElementById('step-success').style.display = 'block';
+    document.getElementById('success-msg').textContent    = 'Thank you, ' + name + '! See you next time.';
+    document.getElementById('success-detail').innerHTML   = `
+      <div class="row"><span>Name</span><span>${name}</span></div>
+      <div class="row"><span>Phone</span><span>+65 ${phoneClean}</span></div>
+      <div class="row"><span>Location</span><span>${location}</span></div>
+      <div class="row"><span>Time</span><span>${time}, ${date}</span></div>
+    `;
+  } else {
+    const f = document.getElementById('submit-flash');
+    f.innerHTML = '⚠️ Submission failed. Please try again or check your connection.';
+    f.className = 'flash fail'; f.style.display = 'block';
+  }
 }
 
-function renderList() {
-  const el = document.getElementById('att-list');
-  document.getElementById('count').textContent = records.length + ' present';
-  if (!records.length) { el.innerHTML = '<div class="empty">No attendance yet — scan a QR to begin</div>'; return; }
-  el.innerHTML = records.slice().reverse().map(r => {
-    const ini = r.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const icon = r.synced ? '🟢' : '🔴';
-    return `<div class="att-row">
-      <div class="avatar">${ini}</div>
-      <div class="att-info">
-        <div class="att-name">${r.name} <span class="att-sync">${icon}</span></div>
-        <div class="att-sub">${r.phone} · ${r.session}</div>
-        <div class="att-loc">${r.location}</div>
-      </div>
-      <div class="att-right"><div class="att-time">${r.time}</div></div>
-    </div>`;
-  }).join('');
+// ── Reset for next person ───────────────────────────────────────
+function resetForm() {
+  currentPhone = '';
+  document.getElementById('step-success').style.display = 'none';
+  document.getElementById('step-phone').style.display   = 'block';
+  document.getElementById('phone-input').value          = '';
+  document.getElementById('phone-btn').textContent      = 'Continue →';
+  document.getElementById('submit-flash').style.display = 'none';
+  document.getElementById('phone-input').focus();
 }
 
-function exportCSV() {
-  if (!records.length) { setStatus('Nothing to export yet.', 'red'); return; }
-  const rows = [
-    ['Name','Phone','Session','Location','Date','Time','Synced to Sheets'],
-    ...records.map(r => [r.name, r.phone, r.session, r.location, r.date, r.time, r.synced ? 'Yes' : 'No'])
-  ];
-  const csv = rows.map(r => r.map(v => '"' + v + '"').join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = 'attendance_' + new Date().toLocaleDateString('en-SG').replace(/\//g, '-') + '.csv';
-  a.click();
+// ── Sync via JSONP ──────────────────────────────────────────────
+function syncToSheets(rec) {
+  return new Promise(resolve => {
+    setDot('busy', 'Syncing…');
+    const params = new URLSearchParams({
+      name:     rec.name,
+      email:    rec.email || '',
+      location: rec.location,
+      phone:    rec.phone
+    });
+    const cbName = 'cb_' + Date.now();
+    const script = document.createElement('script');
+    const timer  = setTimeout(() => { cleanup(); setDot('on', 'Sent ✓'); resolve(true); }, 8000);
+    window[cbName] = (d) => {
+      cleanup();
+      const ok = d && d.status === 'ok';
+      setDot(ok ? 'on' : 'err', ok ? 'Synced ✓' : 'Error');
+      resolve(ok);
+    };
+    function cleanup() {
+      clearTimeout(timer); delete window[cbName];
+      try { script.parentNode && script.parentNode.removeChild(script); } catch(e) {}
+    }
+    script.onerror = () => { cleanup(); setDot('err', 'Failed'); resolve(false); };
+    script.src = SCRIPT_URL + '?' + params.toString() + '&callback=' + cbName;
+    document.head.appendChild(script);
+  });
 }
 
-function setStatus(msg, color) {
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.style.color = color === 'green' ? 'var(--green)' : color === 'red' ? 'var(--red)' : 'var(--text2)';
+function setDot(s, l) {
+  document.getElementById('sync-dot').className = 'dot ' + (s || '');
+  document.getElementById('sync-label').textContent = l;
+}
+
+// ── Shake animation for validation ─────────────────────────────
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none';
+  el.style.borderColor = 'var(--red)';
+  el.offsetHeight;
+  el.style.animation = 'shake 0.3s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 800);
 }
 </script>
+<style>
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+#success-screen{display:flex}
+</style>
 </body>
 </html>
