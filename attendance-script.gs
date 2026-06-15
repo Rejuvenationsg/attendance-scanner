@@ -1,73 +1,93 @@
 // ============================================================
 //  Attendance Scanner — Google Apps Script
+//  VERSION: 2026-06-15-v3
 //  Columns: Timestamp | Name | Email | Location | Handphone Number
 //  Sheet: https://docs.google.com/spreadsheets/d/113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo
-//  DEPLOY: Execute as Me, Who has access: Anyone
+//
+//  ⚠️ DEPLOY INSTRUCTIONS ⚠️
+//  1. Paste this ENTIRE file, replacing all existing code
+//  2. Save (Ctrl+S)
+//  3. Click Deploy > New deployment (create a FRESH one, don't edit old)
+//  4. Type: Web app | Execute as: Me | Who has access: Anyone
+//  5. Click Deploy, copy the NEW URL
+//  6. Test by opening the URL — must show version "2026-06-15-v3"
 // ============================================================
 
 var SPREADSHEET_ID = "113KIEqWC3NyGhiVz99Dg4lREqvcrVBTYuRktw5y6KGo";
 var SHEET_GID      = 246908960;
 var SHEET_NAME     = "Form_Responses";
+var VERSION        = "2026-06-15-v3";
 
 function doGet(e) {
   var output;
   try {
     var p = e.parameter || {};
 
-    // Test ping
+    // Test ping — shows version so we can confirm deployment
     if (!p.name) {
-      output = { status: "ok", message: "Script is running!" };
+      output = {
+        status: "ok",
+        version: VERSION,
+        message: "Script is running! Version " + VERSION
+      };
       return respond(output, p.callback);
     }
 
     var sheet = getTargetSheet();
 
-    // Ensure spreadsheet timezone is Singapore so timestamps align
+    // Ensure spreadsheet timezone is Singapore
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     if (ss.getSpreadsheetTimeZone() !== "Asia/Singapore") {
       ss.setSpreadsheetTimeZone("Asia/Singapore");
     }
 
-    // Create header if sheet is empty
+    // Create header if sheet is completely empty
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["Timestamp", "Name", "Email", "Location", "Handphone Number"]);
+      sheet.getRange(1, 1, 1, 5).setValues([["Timestamp", "Name", "Email", "Location", "Handphone Number"]]);
       sheet.getRange(1, 1, 1, 5)
         .setFontWeight("bold")
         .setBackground("#4a1a8c")
         .setFontColor("#ffffff");
       sheet.setFrozenRows(1);
-      sheet.autoResizeColumns(1, 5);
     }
 
-    // Clean phone — strip +65 prefix, keep 8 digits only
+    // Clean phone — strip +65 / 65 prefix, keep digits only
     var rawPhone = (p.phone || "").toString().replace(/\D/g, "");
-    if (rawPhone.startsWith("65") && rawPhone.length === 10) {
-      rawPhone = rawPhone.substring(2); // strip country code
+    if (rawPhone.length === 10 && rawPhone.substring(0,2) === "65") {
+      rawPhone = rawPhone.substring(2);
     }
 
-    // Use a real Date object (Singapore timezone) so it matches the
-    // existing Form_Responses timestamp column type and format
-    var now = new Date();
+    var name     = (p.name || "").toString();
+    var email    = (p.email || "").toString();
+    var location = (p.location || "").toString();
+    var now      = new Date();
 
-    // Write to explicit cell range (A:E) — guarantees correct column
-    // alignment regardless of any extra/empty trailing columns
-    var nextRow = sheet.getLastRow() + 1;
-    sheet.getRange(nextRow, 1, 1, 5).setValues([[
-      now,                  // A: Timestamp (real date value)
-      p.name     || "",     // B: Name
-      p.email    || "",     // C: Email
-      p.location || "",     // D: Location
-      rawPhone              // E: Handphone Number (8 digits only)
-    ]]);
+    // ── Find the actual next empty row by checking column B (Name) ──
+    // This avoids issues where other columns have stray data
+    var lastRow = sheet.getLastRow();
+    var nextRow = lastRow + 1;
 
-    // Format the timestamp cell to match existing rows: DD/MM/YYYY HH:MM:SS
+    // Build the row explicitly as an array of exactly 5 values
+    var rowData = [now, name, email, location, rawPhone];
+
+    // Write each cell individually to GUARANTEE correct placement
+    sheet.getRange(nextRow, 1).setValue(now);                          // A: Timestamp
     sheet.getRange(nextRow, 1).setNumberFormat("dd/MM/yyyy HH:mm:ss");
+    sheet.getRange(nextRow, 2).setValue(name);                          // B: Name
+    sheet.getRange(nextRow, 3).setValue(email);                         // C: Email
+    sheet.getRange(nextRow, 4).setValue(location);                      // D: Location
+    sheet.getRange(nextRow, 5).setValue(rawPhone);                      // E: Handphone Number
 
-    sheet.autoResizeColumns(1, 5);
-    output = { status: "ok", message: "Logged: " + p.name };
+    output = {
+      status: "ok",
+      version: VERSION,
+      row: nextRow,
+      written: rowData,
+      message: "Logged: " + name + " at row " + nextRow
+    };
 
   } catch(err) {
-    output = { status: "error", message: err.toString() };
+    output = { status: "error", version: VERSION, message: err.toString() };
   }
 
   return respond(output, (e.parameter||{}).callback);
@@ -84,13 +104,10 @@ function respond(data, callback) {
 function getTargetSheet() {
   var ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheets = ss.getSheets();
-  // Try GID first
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].getSheetId() === SHEET_GID) return sheets[i];
   }
-  // Try name
   var byName = ss.getSheetByName(SHEET_NAME);
   if (byName) return byName;
-  // Create new
   return ss.insertSheet(SHEET_NAME);
 }
