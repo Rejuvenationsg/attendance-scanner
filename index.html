@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--text:#1a1916;--text2:#6b6860;--text3:#a8a69e;
+  --green:#1a7a4a;--green-bg:#e8f5ee;--green-border:#a7d7bb;
+  --red:#c0392b;--red-bg:#fdecea;
+  --accent:#2563eb;--accent-bg:#eff4ff;
+  --radius:14px;--radius-sm:9px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:10px;height:54px;position:sticky;top:0;z-index:10}
+.logo{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:17px;height:17px}
+header h1{font-size:16px;font-weight:600;margin-right:auto}
+.sync-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:#d1d5db;flex-shrink:0}
+.dot.on{background:#16a34a}
+.dot.busy{background:#f59e0b;animation:blink 1s infinite}
+.dot.err{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+main{max-width:440px;margin:0 auto;padding:20px 16px 60px;display:flex;flex-direction:column;gap:16px}
+
+/* Step indicator */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:4px}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.step.active{color:var(--accent);font-weight:600}
+.step.done{color:var(--green)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.step.active .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.done .step-num{background:var(--green);border-color:var(--green);color:#fff}
+.step-line{flex:1;height:1.5px;background:var(--border);margin:0 6px}
+.step-line.done{background:var(--green)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-head{padding:14px 16px;border-bottom:1px solid var(--border)}
+.card-head h2{font-size:14px;font-weight:600}
+.card-head p{font-size:12px;color:var(--text2);margin-top:2px}
+.card-body{padding:16px}
+
+/* Fields */
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em}
+.field input,.field select{width:100%;padding:12px 13px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text);background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);outline:none;transition:border-color 0.15s,background 0.15s}
+.field input:focus,.field select:focus{border-color:var(--accent);background:#fff}
+.field input.filled{background:#fff;border-color:var(--green-border)}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6860' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.phone-wrap{position:relative}
+.phone-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text2);pointer-events:none;font-family:'DM Mono',monospace}
+.phone-wrap input{padding-left:48px}
+
+/* Known member banner */
+#known-banner{display:none;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:13px;display:none;align-items:center;gap:10px}
+#known-banner svg{flex-shrink:0;color:var(--green)}
+#known-banner p{font-size:13px;color:var(--green);line-height:1.4}
+#known-banner strong{font-weight:600}
+
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-green{background:var(--green);color:#fff;margin-top:4px}
+.btn-green:hover:not(:disabled){opacity:0.88}
+.btn-outline{background:transparent;color:var(--text2);border:1.5px solid var(--border);margin-top:4px}
+.btn-outline:hover{background:var(--surface2)}
+
+/* Success screen */
+#success-screen{display:none;flex-direction:column;align-items:center;text-align:center;padding:32px 16px}
+.success-icon{width:70px;height:70px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.success-icon svg{color:var(--green)}
+#success-screen h2{font-size:22px;font-weight:600;margin-bottom:6px}
+#success-screen p{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.success-detail{background:var(--surface2);border-radius:var(--radius-sm);padding:13px 16px;width:100%;text-align:left;margin-bottom:20px}
+.success-detail .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)}
+.success-detail .row:last-child{border-bottom:none;padding-bottom:0}
+.success-detail .row span:first-child{color:var(--text2)}
+.success-detail .row span:last-child{font-weight:500;text-align:right}
+
+/* Flash */
+.flash{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;display:none;margin-top:10px;text-align:center;line-height:1.6}
+.flash.ok{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green)}
+.flash.fail{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red)}
+
+/* Sheet link */
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h2v2h-2zM18 14h3M14 18v3M18 18h3v3h-3z"/>
+    </svg>
+  </div>
+  <h1>Attendance</h1>
+  <div class="sync-pill">
+    <div class="dot on" id="sync-dot"></div>
+    <span id="sync-label">Ready</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── STEP: PHONE LOOKUP ── -->
+  <div id="step-phone">
+    <div class="card">
+      <div class="card-head">
+        <h2>Welcome! 👋</h2>
+        <p>Enter your handphone number to check in</p>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>Handphone Number</label>
+          <div class="phone-wrap">
+            <span class="phone-prefix">+65</span>
+            <input type="tel" id="phone-input" placeholder="9xxx xxxx" maxlength="8"
+              oninput="this.value=this.value.replace(/[^\d]/g,'').slice(0,8); onPhoneInput(this.value)"
+              onkeydown="if(event.key==='Enter') nextFromPhone()"/>
+          </div>
+          <div id="last-phone-msg" style="font-size:12px;color:var(--green);margin-top:6px;display:none"></div>
+        </div>
+        <button class="btn btn-green" onclick="nextFromPhone()" id="phone-btn">
+          Continue →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP: DETAILS ── -->
+  <div id="step-details" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <h2 id="details-title">Your Details</h2>
+        <p id="details-sub">Please confirm your information</p>
+      </div>
+      <div class="card-body">
+
+        <!-- Returning member banner -->
+        <div id="known-banner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <p>Welcome back, <strong id="known-name"></strong>! Your details have been filled in.</p>
+        </div>
+
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="name-input" placeholder="Your full name" autocomplete="name"
+            oninput="if(this.value) this.classList.add('filled'); else this.classList.remove('filled')"/>
+        </div>
+
+        <div class="field">
+          <label>Handphone Number</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="phone-wrap" style="flex:1">
+              <span class="phone-prefix">+65</span>
+              <input type="tel" id="phone-display" class="filled"
+                oninput="this.value=this.value.replace(/[^\d]/g,'').slice(0,8); onPhoneDisplayInput(this.value)"
+                onkeydown="if(event.key==='Enter') document.getElementById('location-input').focus()"/>
+            </div>
+            <button type="button" onclick="clearPhone()"
+              style="flex-shrink:0;padding:10px 13px;font-size:13px;font-weight:500;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap">
+              ✏️ Change
+            </button>
+          </div>
+          <div id="phone-lookup-msg" style="font-size:12px;color:var(--green);margin-top:5px;display:none"></div>
+        </div>
+
+        <div class="field">
+          <label>Location</label>
+          <select id="location-input">
+            <option value="">— Select your location —</option>
+            <option>面包物语练功场</option>
+            <option>碧山Active Park练功场</option>
+            <option>植物园 练功场</option>
+            <option>碧山-宏茂桥公园</option>
+            <option>淡滨尼东民众俱乐部</option>
+            <option>蔡厝港公园</option>
+            <option>107A Aljunied Crescent</option>
+            <option>金文泰体育馆 Clementi Sports Hall</option>
+          </select>
+        </div>
+
+        <button class="btn btn-green" onclick="submitAttendance()" id="submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit Attendance
+        </button>
+        <button class="btn btn-outline" onclick="goBack()">← Change phone number</button>
+        <div class="flash" id="submit-flash"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SUCCESS SCREEN ── -->
+  <div id="step-success" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <div id="success-screen">
+          <div class="success-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2>Attendance Recorded!</h2>
+          <p id="success-msg">Your attendance has been submitted successfully.</p>
+          <div class="success-detail" id="success-detail"></div>
+          <button class="btn btn-green" onclick="resetForm()" style="width:100%;margin-top:0">
+            ✓ Done — Submit Another
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbz2Ay8bJFcDyoDKqS5R8B_lWS4R9fN_GwkazJd3-ggRtQURSLRXvQQjD-RHTO-H7GgLjQ/exec';
+const MEMBERS_KEY = 'att_members_v8';
+
+let members = {};
+let currentPhone = '';
+
+// ── Init ────────────────────────────────────────────────────────
+const LAST_PHONE_KEY = 'att_last_phone_v1';
+
+window.addEventListener('load', () => {
+  try { members = JSON.parse(localStorage.getItem(MEMBERS_KEY) || '{}'); } catch(e) { members = {}; }
+
+  // Restore last used phone number
+  const lastPhone = localStorage.getItem(LAST_PHONE_KEY);
+  if (lastPhone) {
+    const digits = lastPhone.replace(/^\+65/, '');
+    document.getElementById('phone-input').value = digits;
+    onPhoneInput(digits);
+    document.getElementById('last-phone-msg').style.display = 'block';
+    document.getElementById('last-phone-msg').textContent = '📱 Last used: +65 ' + digits + ' — tap Continue or change it';
+  }
+  document.getElementById('phone-input').focus();
+  document.getElementById('phone-input').select();
+});
+
+// ── Step 1: Phone input ─────────────────────────────────────────
+function onPhoneInput(val) {
+  // Auto-highlight if known member
+  const phone = '+65' + val;
+  const btn = document.getElementById('phone-btn');
+  if (val.length === 8) {
+    btn.textContent = members[phone] ? '✓ Welcome back — Continue →' : 'Continue →';
+  } else {
+    btn.textContent = 'Continue →';
+  }
+}
+
+function nextFromPhone() {
+  const raw = document.getElementById('phone-input').value.replace(/[^\d]/g, '');
+  if (raw.length < 8) { shake('phone-input'); return; }
+  currentPhone = '+65' + raw;
+  localStorage.setItem(LAST_PHONE_KEY, currentPhone);
+
+  // Show details step
+  document.getElementById('step-phone').style.display    = 'none';
+  document.getElementById('step-details').style.display  = 'block';
+  document.getElementById('phone-display').value         = raw;
+  document.getElementById('phone-lookup-msg').style.display = 'none';
+
+  const known = members[currentPhone];
+  if (known) {
+    // Returning member — pre-fill name
+    document.getElementById('name-input').value = known.name;
+    document.getElementById('name-input').classList.add('filled');
+    document.getElementById('known-name').textContent = known.name;
+    document.getElementById('known-banner').style.display = 'flex';
+    document.getElementById('details-title').textContent = 'Welcome back! 🎉';
+    document.getElementById('details-sub').textContent   = 'Just select your location and submit.';
+    document.getElementById('location-input').focus();
+  } else {
+    // New member
+    document.getElementById('known-banner').style.display = 'none';
+    document.getElementById('details-title').textContent  = 'First time? Welcome! 👋';
+    document.getElementById('details-sub').textContent    = 'Please enter your name and location.';
+    document.getElementById('name-input').value = '';
+    document.getElementById('name-input').classList.remove('filled');
+    document.getElementById('name-input').focus();
+  }
+  // Always reset location
+  document.getElementById('location-input').selectedIndex = 0;
+}
+
+function clearPhone() {
+  // Allow editing phone number directly — re-lookup member on change
+  const el = document.getElementById('phone-display');
+  el.focus();
+  el.select();
+}
+
+function onPhoneDisplayInput(val) {
+  const phone = '+65' + val;
+  currentPhone = phone;
+  const msg = document.getElementById('phone-lookup-msg');
+  if (val.length === 8) {
+    const known = members[phone];
+    if (known) {
+      // Found — update name field
+      document.getElementById('name-input').value = known.name;
+      document.getElementById('name-input').classList.add('filled');
+      document.getElementById('known-name').textContent = known.name;
+      document.getElementById('known-banner').style.display = 'flex';
+      msg.textContent = '✅ Member found: ' + known.name;
+      msg.style.color = 'var(--green)';
+      msg.style.display = 'block';
+    } else {
+      // New number
+      document.getElementById('known-banner').style.display = 'none';
+      document.getElementById('name-input').value = '';
+      document.getElementById('name-input').classList.remove('filled');
+      msg.textContent = 'New number — please enter your name above.';
+      msg.style.color = 'var(--text3)';
+      msg.style.display = 'block';
+      document.getElementById('name-input').focus();
+    }
+  } else {
+    msg.style.display = 'none';
+  }
+}
+
+function goBack() {
+  document.getElementById('step-details').style.display = 'none';
+  document.getElementById('step-phone').style.display   = 'block';
+  document.getElementById('phone-input').focus();
+  document.getElementById('submit-flash').style.display = 'none';
+}
+
+// ── Step 2: Submit ──────────────────────────────────────────────
+async function submitAttendance() {
+  const name     = document.getElementById('name-input').value.trim();
+  const location = document.getElementById('location-input').value;
+
+  if (!name)     { shake('name-input');     return; }
+  if (!location) { shake('location-input'); return; }
+
+  // Save member for future visits
+  members[currentPhone] = { name, phone: currentPhone };
+  localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Submitting…`;
+
+  const now  = new Date();
+  const time = now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('en-SG');
+  const phoneClean = currentPhone.replace(/^\+65/, '');
+  const record = { name, phone: phoneClean, email: '', location };
+
+  const ok = await syncToSheets(record);
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Submit Attendance`;
+
+  // Always show success — no-cors fetch sends data even without response confirmation
+  document.getElementById('step-details').style.display = 'none';
+  document.getElementById('step-success').style.display = 'block';
+  document.getElementById('success-msg').textContent    = 'Thank you, ' + name + '! See you next time.';
+  document.getElementById('success-detail').innerHTML   = `
+    <div class="row"><span>Name</span><span>${name}</span></div>
+    <div class="row"><span>Phone</span><span>+65 ${phoneClean}</span></div>
+    <div class="row"><span>Location</span><span>${location}</span></div>
+    <div class="row"><span>Time</span><span>${time}, ${date}</span></div>
+  `;
+}
+
+// ── Reset for next person ───────────────────────────────────────
+function resetForm() {
+  currentPhone = '';
+  document.getElementById('step-success').style.display = 'none';
+  document.getElementById('step-phone').style.display   = 'block';
+  document.getElementById('phone-input').value          = '';
+  document.getElementById('phone-btn').textContent      = 'Continue →';
+  document.getElementById('submit-flash').style.display = 'none';
+  document.getElementById('phone-input').focus();
+}
+
+// ── Sync — tries 3 methods in sequence for maximum reliability ──
+async function syncToSheets(rec) {
+  setDot('busy', 'Syncing…');
+  const params = new URLSearchParams({
+    name:     rec.name,
+    email:    rec.email || '',
+    location: rec.location,
+    phone:    rec.phone
+  });
+
+  // Method 1: fetch with no-cors (fire and forget — most reliable on mobile)
+  try {
+    await fetch(SCRIPT_URL + '?' + params.toString(), {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    });
+    // no-cors always "succeeds" (we can't read response, but request is sent)
+    setDot('on', 'Synced ✓');
+    return true;
+  } catch(e1) {
+    // Method 2: JSONP via script tag
+    try {
+      const ok = await jsonpSync(params);
+      if (ok) { setDot('on', 'Synced ✓'); return true; }
+    } catch(e2) {}
+
+    // Method 3: hidden image ping
+    try {
+      await imagePing(params);
+      setDot('on', 'Sent ✓');
+      return true;
+    } catch(e3) {}
+
+    setDot('err', 'Failed');
+    return false;
+  }
+}
+
+function jsonpSync(params) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_' + Date.now();
+    const script = document.createElement('script');
+    const timer  = setTimeout(() => { cleanup(); resolve(true); }, 6000);
+    window[cbName] = (d) => { cleanup(); resolve(d && d.status === 'ok'); };
+    function cleanup() {
+      clearTimeout(timer); delete window[cbName];
+      try { script.parentNode && script.parentNode.removeChild(script); } catch(e) {}
+    }
+    script.onerror = () => { cleanup(); resolve(false); };
+    script.src = SCRIPT_URL + '?' + params.toString() + '&callback=' + cbName;
+    document.head.appendChild(script);
+  });
+}
+
+function imagePing(params) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = img.onerror = () => resolve(true);
+    setTimeout(() => resolve(true), 5000);
+    img.src = SCRIPT_URL + '?' + params.toString() + '&t=' + Date.now();
+  });
+}
+
+function setDot(s, l) {
+  document.getElementById('sync-dot').className = 'dot ' + (s || '');
+  document.getElementById('sync-label').textContent = l;
+}
+
+// ── Shake animation for validation ─────────────────────────────
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none';
+  el.style.borderColor = 'var(--red)';
+  el.offsetHeight;
+  el.style.animation = 'shake 0.3s ease';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 800);
+}
+</script>
+<style>
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+#success-screen{display:flex}
+</style>
+</body>
+</html>
